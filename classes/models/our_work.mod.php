@@ -12,33 +12,58 @@ class OurWork
 
     public function create(string $title, ?string $photo = null): bool
     {
-        $sql = 'INSERT INTO OUR_WORK (work_title, photo) VALUES (?, ?)';
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$title, $photo]);
+        try {
+            $sql = 'INSERT INTO OUR_WORK (work_title, photo) VALUES (?, ?)';
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([$title, $photo]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 
     public function getAll(): array
     {
-        return $this->pdo->query('SELECT * FROM OUR_WORK')->fetchAll();
+        try {
+            return $this->pdo->query('SELECT * FROM OUR_WORK')->fetchAll();
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return [];
+        }
     }
 
     public function find(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM OUR_WORK WHERE id = ?');
-        $stmt->execute([$id]);
-        $row = $stmt->fetch();
-        return $row === false ? null : $row;
+        try {
+            $stmt = $this->pdo->prepare('SELECT * FROM OUR_WORK WHERE id = ?');
+            $stmt->execute([$id]);
+            $row = $stmt->fetch();
+            return $row === false ? null : $row;
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return null;
+        }
     }
 
     public function update(int $id, string $title, ?string $photo = null): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE OUR_WORK SET work_title = ?, photo = ? WHERE id = ?');
-        return $stmt->execute([$title, $photo, $id]);
+        try {
+            $stmt = $this->pdo->prepare('UPDATE OUR_WORK SET work_title = ?, photo = ? WHERE id = ?');
+            return $stmt->execute([$title, $photo, $id]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 
     public function delete(int $id): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM OUR_WORK WHERE id = ?');
-        return $stmt->execute([$id]);
+        try {
+            $stmt = $this->pdo->prepare('DELETE FROM OUR_WORK WHERE id = ?');
+            return $stmt->execute([$id]);
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 }
