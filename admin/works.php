@@ -1,0 +1,187 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['admin_user_id'])) {
+    header('Location: ../admin-login.php');
+    exit();
+}
+
+require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../classes/db.php';
+require_once __DIR__ . '/../classes/models/our_work.mod.php';
+
+$pdo = DB::getConnection();
+$work = new OurWork($pdo);
+
+$message = '';
+$error = '';
+$action = $_GET['action'] ?? 'list';
+$workId = $_GET['id'] ?? null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        if ($_POST['action'] === 'create') {
+            $title = $_POST['title'] ?? '';
+            $photoUrl = $_POST['photo_url'] ?? null;
+
+            if (!empty($title)) {
+                $result = $work->create($title, $photoUrl);
+                if ($result) {
+                    $message = 'Work created successfully!';
+                    $action = 'list';
+                } else {
+                    $error = 'Failed to create work';
+                }
+            } else {
+                $error = 'Title is required';
+            }
+        } elseif ($_POST['action'] === 'update') {
+            $id = $_POST['id'] ?? null;
+            $title = $_POST['title'] ?? '';
+            $photoUrl = $_POST['photo_url'] ?? null;
+
+            if ($id) {
+                $result = $work->update($id, $title, $photoUrl);
+                if ($result) {
+                    $message = 'Work updated successfully!';
+                } else {
+                    $error = 'Failed to update work';
+                }
+                $action = 'list';
+            }
+        } elseif ($_POST['action'] === 'delete') {
+            $id = $_POST['id'] ?? null;
+            if ($id) {
+                if ($work->delete($id)) {
+                    $message = 'Work deleted successfully!';
+                } else {
+                    $error = 'Failed to delete work';
+                }
+            }
+            $action = 'list';
+        }
+    }
+}
+
+$allWorks = $work->getAll();
+$currentWork = null;
+
+if ($action === 'edit' && $workId) {
+    $currentWork = $work->find($workId);
+}
+
+// Common CSS/HTML structure
+include 'admin-layout.php';
+adminHeader('Works', 'works');
+?>
+
+            <!-- Messages -->
+            <?php if ($message): ?>
+                <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($message); ?></div>
+            <?php endif; ?>
+            
+            <?php if ($error): ?>
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+            
+            <div class="content-card">
+                <?php if ($action === 'list'): ?>
+                    <div class="page-header">
+                        <h2><i class="fas fa-briefcase"></i> Manage Our Works</h2>
+                        <a href="works.php?action=create" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Work
+                        </a>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Photo</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($allWorks as $w): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($w['id']); ?></td>
+                                    <td><?php echo htmlspecialchars($w['title']); ?></td>
+                                    <td>
+                                        <?php if (!empty($w['photo_url'])): ?>
+                                            <img src="<?php echo htmlspecialchars($w['photo_url']); ?>" alt="<?php echo htmlspecialchars($w['title']); ?>" style="max-width: 80px; height: auto;">
+                                        <?php else: ?>
+                                            <span style="color: #999;">No image</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="works.php?action=edit&id=<?php echo $w['id']; ?>" class="btn btn-secondary btn-sm">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="<?php echo $w['id']; ?>">
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                
+                <?php elseif ($action === 'create'): ?>
+                    <a href="works.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Works</a>
+                    <h2><i class="fas fa-plus"></i> Add New Work</h2>
+                    
+                    <form method="POST" style="max-width: 500px; margin-top: 20px;">
+                        <input type="hidden" name="action" value="create">
+                        
+                        <div class="form-group">
+                            <label for="title">Title <span style="color: red;">*</span></label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="photo_url">Photo URL</label>
+                            <input type="url" id="photo_url" name="photo_url">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Create</button>
+                            <a href="works.php" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+                        </div>
+                    </form>
+                
+                <?php elseif ($action === 'edit' && $currentWork): ?>
+                    <a href="works.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Works</a>
+                    <h2><i class="fas fa-edit"></i> Edit Work</h2>
+                    
+                    <form method="POST" style="max-width: 500px; margin-top: 20px;">
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="id" value="<?php echo $currentWork['id']; ?>">
+                        
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($currentWork['title']); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="photo_url">Photo URL</label>
+                            <input type="url" id="photo_url" name="photo_url" value="<?php echo htmlspecialchars($currentWork['photo_url'] ?? ''); ?>">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Update</button>
+                            <a href="works.php" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+                        </div>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
