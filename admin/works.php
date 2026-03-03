@@ -106,7 +106,7 @@ adminHeader('Works', 'works');
                             <?php foreach ($allWorks as $w): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($w['id']); ?></td>
-                                    <td><?php echo htmlspecialchars($w['title']); ?></td>
+                                    <td><?php echo htmlspecialchars($w['work_title']); ?></td>
                                     <td>
                                         <?php if (!empty($w['photo_url'])): ?>
                                             <img src="<?php echo htmlspecialchars($w['photo_url']); ?>" alt="<?php echo htmlspecialchars($w['title']); ?>" style="max-width: 80px; height: auto;">

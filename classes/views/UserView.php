@@ -1,45 +1,44 @@
 <?php
-
+/**
+ * UserView - Data provider for user records
+ * Returns data to be rendered by templates, not HTML directly
+ */
 class UserView
 {
-    public function renderList(array $users): string
+    /**
+     * Get all users for listing
+     * @param array $users Array of user records from model
+     * @return array Data structure containing users and metadata
+     */
+    public function getListData(array $users): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Users</h2>
-            <ul>
-                <?php foreach ($users as $user): ?>
-                    <li>ID: <?= $user['user_id'] ?>, Username: <?= $user['user_name'] ?></li>
-                <?php endforeach; ?>
-            </ul>
-            <a href="?action=create">Add New User</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        return [
+            'title' => 'Users',
+            'users' => $users,
+            'action_url' => '?action=create',
+            'action_label' => 'Add New User'
+        ];
     }
 
-    public function renderForm(): string
+    /**
+     * Get form data structure
+     * @param array $formFields Field names and types for rendering
+     * @return array Data structure for form rendering
+     */
+    public function getFormData(array $formFields = []): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Add User</h2>
-            <form method="post" action="">
-                <label>Username: <input type="text" name="username" required></label><br>
-                <label>Password: <input type="password" name="password" required></label><br>
-                <label>Role ID: <input type="number" name="roleId"></label><br>
-                <button type="submit">Add User</button>
-            </form>
-            <a href="?action=index">Back to List</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        $defaultFields = [
+            'username' => ['type' => 'text', 'label' => 'Username', 'required' => true],
+            'password' => ['type' => 'password', 'label' => 'Password', 'required' => true],
+            'roleId' => ['type' => 'number', 'label' => 'Role ID']
+        ];
+        
+        return [
+            'title' => 'Add User',
+            'fields' => array_merge($defaultFields, $formFields),
+            'submit_label' => 'Add User',
+            'back_url' => '?action=index',
+            'back_label' => 'Back to List'
+        ];
     }
 }

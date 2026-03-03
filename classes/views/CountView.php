@@ -1,46 +1,45 @@
 <?php
-
+/**
+ * CountView - Data provider for count records
+ * Returns data to be rendered by templates, not HTML directly
+ */
 class CountView
 {
-    public function renderList(array $counts): string
+    /**
+     * Get all counts for listing
+     * @param array $counts Array of count records from model
+     * @return array Data structure containing counts and metadata
+     */
+    public function getListData(array $counts): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Counts</h2>
-            <ul>
-                <?php foreach ($counts as $count): ?>
-                    <li>ID: <?= $count['id'] ?>, Impact: <?= $count['count_impact'] ?>, Project: <?= $count['count_project'] ?>, Member: <?= $count['count_member'] ?>, Trainees: <?= $count['count_trainees'] ?></li>
-                <?php endforeach; ?>
-            </ul>
-            <a href="?action=create">Add New Count</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        return [
+            'title' => 'Counts',
+            'counts' => $counts,
+            'action_url' => '?action=create',
+            'action_label' => 'Add New Count'
+        ];
     }
 
-    public function renderForm(): string
+    /**
+     * Get form data structure
+     * @param array $formFields Field names and types for rendering
+     * @return array Data structure for form rendering
+     */
+    public function getFormData(array $formFields = []): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Add Count</h2>
-            <form method="post" action="">
-                <label>Impact: <input type="number" name="impact"></label><br>
-                <label>Project: <input type="number" name="project"></label><br>
-                <label>Member: <input type="number" name="member"></label><br>
-                <label>Trainees: <input type="number" name="trainees"></label><br>
-                <button type="submit">Add Count</button>
-            </form>
-            <a href="?action=index">Back to List</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        $defaultFields = [
+            'impact' => ['type' => 'number', 'label' => 'Impact'],
+            'project' => ['type' => 'number', 'label' => 'Project'],
+            'member' => ['type' => 'number', 'label' => 'Member'],
+            'trainees' => ['type' => 'number', 'label' => 'Trainees']
+        ];
+        
+        return [
+            'title' => 'Add Count',
+            'fields' => array_merge($defaultFields, $formFields),
+            'submit_label' => 'Add Count',
+            'back_url' => '?action=index',
+            'back_label' => 'Back to List'
+        ];
     }
 }

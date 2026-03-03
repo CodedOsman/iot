@@ -1,45 +1,44 @@
 <?php
-
+/**
+ * PartnerView - Data provider for partner records
+ * Returns data to be rendered by templates, not HTML directly
+ */
 class PartnerView
 {
-    public function renderList(array $partners): string
+    /**
+     * Get all partners for listing
+     * @param array $partners Array of partner records from model
+     * @return array Data structure containing partners and metadata
+     */
+    public function getListData(array $partners): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Partners</h2>
-            <ul>
-                <?php foreach ($partners as $partner): ?>
-                    <li>ID: <?= $partner['id'] ?>, Name: <?= $partner['partner_name'] ?>, Website: <?= $partner['partner_website'] ?? '' ?></li>
-                <?php endforeach; ?>
-            </ul>
-            <a href="?action=create">Add New Partner</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        return [
+            'title' => 'Partners',
+            'partners' => $partners,
+            'action_url' => '?action=create',
+            'action_label' => 'Add New Partner'
+        ];
     }
 
-    public function renderForm(): string
+    /**
+     * Get form data structure
+     * @param array $formFields Field names and types for rendering
+     * @return array Data structure for form rendering
+     */
+    public function getFormData(array $formFields = []): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Add Partner</h2>
-            <form method="post" action="">
-                <label>Name: <input type="text" name="name" required></label><br>
-                <label>Logo URL: <input type="text" name="logo"></label><br>
-                <label>Website: <input type="url" name="website"></label><br>
-                <button type="submit">Add Partner</button>
-            </form>
-            <a href="?action=index">Back to List</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        $defaultFields = [
+            'name' => ['type' => 'text', 'label' => 'Partner Name', 'required' => true],
+            'logo' => ['type' => 'text', 'label' => 'Logo URL'],
+            'website' => ['type' => 'url', 'label' => 'Website']
+        ];
+        
+        return [
+            'title' => 'Add Partner',
+            'fields' => array_merge($defaultFields, $formFields),
+            'submit_label' => 'Add Partner',
+            'back_url' => '?action=index',
+            'back_label' => 'Back to List'
+        ];
     }
 }

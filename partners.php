@@ -1,6 +1,25 @@
 <?php
 include 'components/header.php';
 include 'components/nav.php';
+
+// Include necessary classes
+require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/classes/db.php';
+require_once __DIR__ . '/classes/models/partners.mod.php';
+require_once __DIR__ . '/classes/views/PartnerView.php';
+
+// Initialize database connection and model
+$pdo = DB::getConnection();
+$partnerModel = new Partner($pdo);
+
+// Create view instance
+$view = new PartnerView();
+
+// Retrieve all partners from model
+$allPartners = $partnerModel->getAll();
+
+// Get structured data from view
+$viewData = $view->getListData($allPartners);
 ?>
 
 <section class="section-padding">
@@ -13,37 +32,21 @@ include 'components/nav.php';
 
         <div class="clients-grid gutter">
             <div class="row">
-                <div class="col-md-3 col-sm-6">
-                    <div class="border-box">
-                        <a href="#">
-                            <img src="assets/img/client-logo/1.png" alt="clients">
-                        </a>
-                    </div><!-- /.border-box -->
-                </div><!-- /.col-md-3 -->
-
-                <div class="col-md-3 col-sm-6">
-                    <div class="border-box">
-                        <a href="#">
-                            <img src="assets/img/client-logo/2.png" alt="clients">
-                        </a>
-                    </div><!-- /.border-box -->
-                </div><!-- /.col-md-3 -->
-
-                <div class="col-md-3 col-sm-6">
-                    <div class="border-box">
-                        <a href="#">
-                            <img src="assets/img/client-logo/4.png" alt="clients">
-                        </a>
-                    </div><!-- /.border-box -->
-                </div><!-- /.col-md-3 -->
-
-                <div class="col-md-3 col-sm-6">
-                    <div class="border-box">
-                        <a href="#">
-                            <img src="assets/img/client-logo/5.png" alt="clients">
-                        </a>
-                    </div><!-- /.border-box -->
-                </div><!-- /.col-md-3 -->
+                <?php if (!empty($viewData['partners'])): ?>
+                    <?php foreach ($viewData['partners'] as $partner): ?>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="border-box">
+                                <a href="<?php echo htmlspecialchars($partner['partner_website'] ?? '#'); ?>">
+                                    <img src="<?php echo htmlspecialchars($partner['partner_logo'] ?? 'assets/img/client-logo/default.png'); ?>" alt="<?php echo htmlspecialchars($partner['partner_name'] ?? 'Partner'); ?>">
+                                </a>
+                            </div><!-- /.border-box -->
+                        </div><!-- /.col-md-3 -->
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12">
+                        <p class="text-center">No partners available at this time.</p>
+                    </div>
+                <?php endif; ?>
             </div><!-- /.row -->
         </div><!-- /.clients-grid -->
 

@@ -1,49 +1,49 @@
 <?php
-
+/**
+ * TeamView - Data provider for team member records
+ * Returns data to be rendered by templates, not HTML directly
+ */
 class TeamView
 {
-    public function renderList(array $teams): string
+    /**
+     * Get all team members for listing
+     * @param array $teams Array of team member records from model
+     * @return array Data structure containing teams and metadata
+     */
+    public function getListData(array $teams): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Team</h2>
-            <ul>
-                <?php foreach ($teams as $team): ?>
-                    <li>ID: <?= $team['id'] ?>, Name: <?= $team['name'] ?>, Position: <?= $team['position'] ?></li>
-                <?php endforeach; ?>
-            </ul>
-            <a href="?action=create">Add New Team Member</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        return [
+            'title' => 'Team Members',
+            'teams' => $teams,
+            'action_url' => '?action=create',
+            'action_label' => 'Add New Team Member'
+        ];
     }
 
-    public function renderForm(): string
+    /**
+     * Get form data structure
+     * @param array $formFields Field names and types for rendering
+     * @return array Data structure for form rendering
+     */
+    public function getFormData(array $formFields = []): array
     {
-        ob_start();
-        include 'components/header.php';
-        include 'components/nav.php';
-        ?>
-        <div class="container">
-            <h2>Add Team Member</h2>
-            <form method="post" action="" enctype="multipart/form-data">
-                <label>Name: <input type="text" name="name" required></label><br>
-                <label>Position: <input type="text" name="position" required></label><br>
-                <label>Photo: <input type="file" name="photo"></label><br>
-                <label>Facebook: <input type="url" name="facebook"></label><br>
-                <label>Instagram: <input type="url" name="instagram"></label><br>
-                <label>Twitter: <input type="url" name="twitter"></label><br>
-                <label>LinkedIn: <input type="url" name="linkedin"></label><br>
-                <button type="submit">Add Team Member</button>
-            </form>
-            <a href="?action=index">Back to List</a>
-        </div>
-        <?php
-        include 'components/footer.php';
-        return ob_get_clean();
+        $defaultFields = [
+            'name' => ['type' => 'text', 'label' => 'Name', 'required' => true],
+            'position' => ['type' => 'text', 'label' => 'Position', 'required' => true],
+            'photo' => ['type' => 'file', 'label' => 'Photo'],
+            'facebook' => ['type' => 'url', 'label' => 'Facebook'],
+            'instagram' => ['type' => 'url', 'label' => 'Instagram'],
+            'twitter' => ['type' => 'url', 'label' => 'Twitter'],
+            'linkedin' => ['type' => 'url', 'label' => 'LinkedIn']
+        ];
+        
+        return [
+            'title' => 'Add Team Member',
+            'fields' => array_merge($defaultFields, $formFields),
+            'submit_label' => 'Add Team Member',
+            'back_url' => '?action=index',
+            'back_label' => 'Back to List',
+            'enctype' => 'multipart/form-data'
+        ];
     }
 }
