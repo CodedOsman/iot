@@ -85,16 +85,17 @@ include 'components/nav.php';
                   </div>
 
                   <div class="col-md-5">
-                      <img src="assets/img/mockup/ipad-2.png" class="img-responsive " alt="Image">
+                      <img src="assets/img/jo.jpeg" class="img-responsive " alt="Image">
                   </div>
               </div>
 
             </div><!-- /.container -->
-
+<!--
             <div class="mocup-wrapper text-center">
                 <img src="assets/img/mockup/landscap-mockup.jpg" alt="image">
             </div>
         </section>
+-->
 
         <?php
 include 'components/footer.php';
