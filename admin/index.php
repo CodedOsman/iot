@@ -354,6 +354,7 @@ try {
                 <li><a href="roles.php"><i class="fas fa-user-tag"></i> Roles</a></li>
                 <li><a href="privileges.php"><i class="fas fa-shield-alt"></i> Privileges</a></li>
                 <li><a href="statistics.php"><i class="fas fa-chart-bar"></i> Statistics</a></li>
+                    <li><a href="testimonies.php"><i class="fas fa-comment-dots"></i> Testimonies</a></li>
                 <li style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;">
                     <a href="../admin-logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </li>

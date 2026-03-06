@@ -363,15 +363,16 @@ function adminHeader($pageTitle, $activePage = 'index') {
             </div>
             
             <ul class="sidebar-menu">
-                <li><a href="index.php" <?php echo $activePage === 'index' ? 'class="active"' : ''; ?>><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="users.php" <?php echo $activePage === 'users' ? 'class="active"' : ''; ?>><i class="fas fa-users"></i> Users</a></li>
-                <li><a href="team.php" <?php echo $activePage === 'team' ? 'class="active"' : ''; ?>><i class="fas fa-users-circle"></i> Team Members</a></li>
-                <li><a href="works.php" <?php echo $activePage === 'works' ? 'class="active"' : ''; ?>><i class="fas fa-briefcase"></i> Our Works</a></li>
-                <li><a href="projects.php" <?php echo $activePage === 'projects' ? 'class="active"' : ''; ?>><i class="fas fa-project-diagram"></i> Projects</a></li>
-                <li><a href="partners.php" <?php echo $activePage === 'partners' ? 'class="active"' : ''; ?>><i class="fas fa-handshake"></i> Partners</a></li>
-                <li><a href="roles.php" <?php echo $activePage === 'roles' ? 'class="active"' : ''; ?>><i class="fas fa-user-tag"></i> Roles</a></li>
-                <li><a href="privileges.php" <?php echo $activePage === 'privileges' ? 'class="active"' : ''; ?>><i class="fas fa-shield-alt"></i> Privileges</a></li>
-                <li><a href="statistics.php" <?php echo $activePage === 'statistics' ? 'class="active"' : ''; ?>><i class="fas fa-chart-bar"></i> Statistics</a></li>
+                 <li><a href="index.php" <?php echo $activePage === 'index' ? 'class="active"' : ''; ?>><i class="fas fa-home"></i> Dashboard</a></li>
+                 <li><a href="users.php" <?php echo $activePage === 'users' ? 'class="active"' : ''; ?>><i class="fas fa-users"></i> Users</a></li>
+                 <li><a href="team.php" <?php echo $activePage === 'team' ? 'class="active"' : ''; ?>><i class="fas fa-users-circle"></i> Team Members</a></li>
+                 <li><a href="works.php" <?php echo $activePage === 'works' ? 'class="active"' : ''; ?>><i class="fas fa-briefcase"></i> Our Works</a></li>
+                 <li><a href="projects.php" <?php echo $activePage === 'projects' ? 'class="active"' : ''; ?>><i class="fas fa-project-diagram"></i> Projects</a></li>
+                 <li><a href="partners.php" <?php echo $activePage === 'partners' ? 'class="active"' : ''; ?>><i class="fas fa-handshake"></i> Partners</a></li>
+                 <li><a href="roles.php" <?php echo $activePage === 'roles' ? 'class="active"' : ''; ?>><i class="fas fa-user-tag"></i> Roles</a></li>
+                 <li><a href="privileges.php" <?php echo $activePage === 'privileges' ? 'class="active"' : ''; ?>><i class="fas fa-shield-alt"></i> Privileges</a></li>
+                 <li><a href="statistics.php" <?php echo $activePage === 'statistics' ? 'class="active"' : ''; ?>><i class="fas fa-chart-bar"></i> Statistics</a></li>
+                 <li><a href="testimonies.php" <?php echo $activePage === 'testimonies' ? 'class="active"' : ''; ?>><i class="fas fa-comment-dots"></i> Testimonies</a></li>
                 <li style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;">
                     <a href="../admin-logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </li>
