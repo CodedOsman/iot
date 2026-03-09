@@ -47,7 +47,8 @@ function handleFileUpload($fieldName, $uploadDir = '../uploads/projects/') {
         throw new Exception('Failed to upload file.');
     }
     
-    return $filepath;
+    // Return path relative to the root directory (not admin directory)
+    return 'uploads/projects/' . $filename;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
