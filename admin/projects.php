@@ -18,14 +18,52 @@ $error = '';
 $action = $_GET['action'] ?? 'list';
 $projectId = $_GET['id'] ?? null;
 
+// Helper function to handle file uploads
+function handleFileUpload($fieldName, $uploadDir = '../uploads/projects/') {
+    if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $file = $_FILES[$fieldName];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($ext, $allowed)) {
+        throw new Exception('Invalid file type. Only images allowed.');
+    }
+    
+    if ($file['size'] > 5242880) { // 5MB limit
+        throw new Exception('File size exceeds 5MB limit.');
+    }
+    
+    $filename = uniqid() . '.' . $ext;
+    $filepath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        throw new Exception('Failed to upload file.');
+    }
+    
+    return $filepath;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create') {
             $title = $_POST['title'] ?? '';
             $description = $_POST['description'] ?? '';
-            $image = $_POST['image'] ?? null;
+            
+            try {
+                $image = handleFileUpload('image');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $image = null;
+            }
 
-            if (!empty($title)) {
+            if (!empty($title) && empty($error)) {
                 if ($project->create($title, $description, $image)) {
                     $message = 'Project created successfully!';
                     $action = 'list';
@@ -39,9 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'] ?? null;
             $title = $_POST['title'] ?? '';
             $description = $_POST['description'] ?? '';
-            $image = $_POST['image'] ?? null;
+            
+            try {
+                $image = handleFileUpload('image');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $image = null;
+            }
+            
+            // If no new file uploaded, keep the existing image
+            if ($image === null && $id) {
+                $currentProject = $project->find($id);
+                $image = $currentProject['photo'] ?? $currentProject['image'] ?? null;
+            }
 
-            if ($id) {
+            if ($id && empty($error)) {
                 if ($project->update($id, $title, $description, $image)) {
                     $message = 'Project updated successfully!';
                 } else {
@@ -370,7 +420,7 @@ if ($action === 'edit' && $projectId) {
                     <div class="page-header">
                         <h2><i class="fas fa-project-diagram"></i> <?php echo $action === 'create' ? 'Add Project' : 'Edit Project'; ?></h2>
                     </div>
-                    <form method="POST" class="mb-4">
+                    <form method="POST" enctype="multipart/form-data" class="mb-4">
                         <?php if ($action === 'edit'): ?>
                             <input type="hidden" name="action" value="update">
                             <input type="hidden" name="id" value="<?php echo htmlspecialchars($currentProject['id'] ?? ''); ?>">
@@ -387,8 +437,17 @@ if ($action === 'edit' && $projectId) {
                             <textarea id="description" name="description" class="form-control"><?php echo htmlspecialchars($currentProject['project_description'] ?? ''); ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="image">Image URL</label>
-                            <input type="text" id="image" name="image" class="form-control" value="<?php echo htmlspecialchars($currentProject['photo'] ?? ''); ?>">
+                            <label for="image">Image</label>
+                            <?php if (!empty($currentProject['photo'] ?? '')): ?>
+                                <div style="margin-bottom: 10px;">
+                                    <img src="<?php echo htmlspecialchars($currentProject['photo']); ?>" alt="Current image" style="max-width: 100px; height: auto; border-radius: 5px;">
+                                    <p style="font-size: 12px; color: #666;">Current image</p>
+                                </div>
+                            <?php endif; ?>
+                            <input type="file" id="image" name="image" class="form-control" accept="image/*">
+                            <?php if ($action === 'edit'): ?>
+                                <p style="font-size: 12px; color: #666;">Leave empty to keep current image</p>
+                            <?php endif; ?>
                         </div>
                         <button type="submit" class="btn btn-primary"><?php echo $action === 'create' ? 'Create Project' : 'Update Project'; ?></button>
                         <a href="projects.php" class="btn btn-secondary">Cancel</a>

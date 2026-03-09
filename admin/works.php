@@ -18,13 +18,51 @@ $error = '';
 $action = $_GET['action'] ?? 'list';
 $workId = $_GET['id'] ?? null;
 
+// Helper function to handle file uploads
+function handleFileUpload($fieldName, $uploadDir = '../uploads/works/') {
+    if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $file = $_FILES[$fieldName];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($ext, $allowed)) {
+        throw new Exception('Invalid file type. Only images allowed.');
+    }
+    
+    if ($file['size'] > 5242880) { // 5MB limit
+        throw new Exception('File size exceeds 5MB limit.');
+    }
+    
+    $filename = uniqid() . '.' . $ext;
+    $filepath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        throw new Exception('Failed to upload file.');
+    }
+    
+    return $filepath;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create') {
             $title = $_POST['title'] ?? '';
-            $photo = $_POST['photo'] ?? null;
+            
+            try {
+                $photo = handleFileUpload('photo');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $photo = null;
+            }
 
-            if (!empty($title)) {
+            if (!empty($title) && empty($error)) {
                 $result = $work->create($title, $photo);
                 if ($result) {
                     $message = 'Work created successfully!';
@@ -38,9 +76,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($_POST['action'] === 'update') {
             $id = $_POST['id'] ?? null;
             $title = $_POST['title'] ?? '';
-            $photo = $_POST['photo'] ?? null;
+            
+            try {
+                $photo = handleFileUpload('photo');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $photo = null;
+            }
+            
+            // If no new file uploaded, keep the existing photo
+            if ($photo === null && $id) {
+                $currentWork = $work->find($id);
+                $photo = $currentWork['photo'] ?? null;
+            }
 
-            if ($id) {
+            if ($id && empty($error)) {
                 $result = $work->update($id, $title, $photo);
                 if ($result) {
                     $message = 'Work updated successfully!';
@@ -137,7 +187,7 @@ adminHeader('Works', 'works');
                     <a href="works.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Works</a>
                     <h2><i class="fas fa-plus"></i> Add New Work</h2>
                     
-                    <form method="POST" style="max-width: 500px; margin-top: 20px;">
+                    <form method="POST" enctype="multipart/form-data" style="max-width: 500px; margin-top: 20px;">
                         <input type="hidden" name="action" value="create">
                         
                         <div class="form-group">
@@ -146,8 +196,8 @@ adminHeader('Works', 'works');
                         </div>
                         
                         <div class="form-group">
-                            <label for="photo">Photo (URL)</label>
-                            <input type="url" id="photo" name="photo">
+                            <label for="photo">Photo</label>
+                            <input type="file" id="photo" name="photo" accept="image/*">
                         </div>
                         
                         <div style="display: flex; gap: 10px;">
@@ -160,7 +210,7 @@ adminHeader('Works', 'works');
                     <a href="works.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Works</a>
                     <h2><i class="fas fa-edit"></i> Edit Work</h2>
                     
-                    <form method="POST" style="max-width: 500px; margin-top: 20px;">
+                    <form method="POST" enctype="multipart/form-data" style="max-width: 500px; margin-top: 20px;">
                         <input type="hidden" name="action" value="update">
                         <input type="hidden" name="id" value="<?php echo $currentWork['id']; ?>">
                         
@@ -170,8 +220,15 @@ adminHeader('Works', 'works');
                         </div>
                         
                         <div class="form-group">
-                            <label for="photo">Photo (URL)</label>
-                            <input type="url" id="photo" name="photo" value="<?php echo htmlspecialchars($currentWork['photo'] ?? ''); ?>">
+                            <label for="photo">Photo</label>
+                            <?php if (!empty($currentWork['photo'])): ?>
+                                <div style="margin-bottom: 10px;">
+                                    <img src="<?php echo htmlspecialchars($currentWork['photo']); ?>" alt="Current photo" style="max-width: 100px; height: auto; border-radius: 5px;">
+                                    <p style="font-size: 12px; color: #666;">Current photo</p>
+                                </div>
+                            <?php endif; ?>
+                            <input type="file" id="photo" name="photo" accept="image/*">
+                            <p style="font-size: 12px; color: #666;">Leave empty to keep current photo</p>
                         </div>
                         
                         <div style="display: flex; gap: 10px;">

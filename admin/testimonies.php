@@ -18,15 +18,55 @@ $error = '';
 $action = $_GET['action'] ?? 'list';
 $testimonyId = $_GET['id'] ?? null;
 
+// Helper function to handle file uploads
+function handleFileUpload($fieldName, $uploadDir = '../uploads/testimonies/') {
+    if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $file = $_FILES[$fieldName];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($ext, $allowed)) {
+        throw new Exception('Invalid file type. Only images allowed.');
+    }
+    
+    if ($file['size'] > 5242880) { // 5MB limit
+        throw new Exception('File size exceeds 5MB limit.');
+    }
+    
+    $filename = uniqid() . '.' . $ext;
+    $filepath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        throw new Exception('Failed to upload file.');
+    }
+    
+    return $filepath;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create') {
-            $picture = $_POST['picture'] ?? '';
             $messageText = $_POST['message'] ?? '';
             $name = $_POST['name'] ?? '';
             $position = $_POST['position'] ?? '';
-            $avatar = $_POST['avatar'] ?? '';
-            if (!empty($messageText) && !empty($name)) {
+            
+            try {
+                $picture = handleFileUpload('picture');
+                $avatar = handleFileUpload('avatar');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $picture = null;
+                $avatar = null;
+            }
+            
+            if (!empty($messageText) && !empty($name) && empty($error)) {
                 if ($testimony->create($picture, $messageText, $name, $position, $avatar)) {
                     $message = 'Testimony created successfully!';
                     $action = 'list';
@@ -38,12 +78,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($_POST['action'] === 'update') {
             $id = $_POST['id'] ?? null;
-            $picture = $_POST['picture'] ?? '';
             $messageText = $_POST['message'] ?? '';
             $name = $_POST['name'] ?? '';
             $position = $_POST['position'] ?? '';
-            $avatar = $_POST['avatar'] ?? '';
-            if ($id) {
+            
+            try {
+                $picture = handleFileUpload('picture');
+                $avatar = handleFileUpload('avatar');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $picture = null;
+                $avatar = null;
+            }
+            
+            // If no new file uploaded, keep the existing files
+            if ($id && ($picture === null || $avatar === null)) {
+                $currentTestimony = $testimony->find($id);
+                if ($picture === null) {
+                    $picture = $currentTestimony['picture'] ?? null;
+                }
+                if ($avatar === null) {
+                    $avatar = $currentTestimony['avatar'] ?? null;
+                }
+            }
+            
+            if ($id && empty($error)) {
                 if ($testimony->update($id, $picture, $messageText, $name, $position, $avatar)) {
                     $message = 'Testimony updated successfully!';
                 } else {
@@ -129,11 +188,11 @@ adminHeader('Testimonies', 'testimonies');
     <?php elseif ($action === 'create'): ?>
         <a href="testimonies.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Testimonies</a>
         <h2><i class="fas fa-plus"></i> Add New Testimony</h2>
-        <form method="POST" style="max-width:500px;margin-top:20px;">
+        <form method="POST" enctype="multipart/form-data" style="max-width:500px;margin-top:20px;">
             <input type="hidden" name="action" value="create">
             <div class="form-group">
-                <label for="picture" >Picture URL</label>
-                <input type="text" id="picture" name="picture">
+                <label for="picture" >Picture</label>
+                <input type="file" id="picture" name="picture" accept="image/*">
             </div>
             <div class="form-group">
                 <label for="message">Message <span style="color:var(--color-rose);">*</span></label>
@@ -148,8 +207,8 @@ adminHeader('Testimonies', 'testimonies');
                 <input type="text" id="position" name="position">
             </div>
             <div class="form-group">
-                <label for="avatar">Avatar URL</label>
-                <input type="text" id="avatar" name="avatar">
+                <label for="avatar">Avatar</label>
+                <input type="file" id="avatar" name="avatar" accept="image/*">
             </div>
             <div style="display:flex;gap:10px;">
                 <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Create</button>
@@ -159,12 +218,19 @@ adminHeader('Testimonies', 'testimonies');
     <?php elseif ($action === 'edit' && $currentTestimony): ?>
         <a href="testimonies.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Testimonies</a>
         <h2><i class="fas fa-edit"></i> Edit Testimony</h2>
-        <form method="POST" style="max-width:500px;margin-top:20px;">
+        <form method="POST" enctype="multipart/form-data" style="max-width:500px;margin-top:20px;">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="id" value="<?php echo $currentTestimony['id']; ?>">
             <div class="form-group">
-                <label for="picture">Picture URL</label>
-                <input type="text" id="picture" name="picture" value="<?php echo htmlspecialchars($currentTestimony['picture']); ?>">
+                <label for="picture">Picture</label>
+                <?php if (!empty($currentTestimony['picture'])): ?>
+                    <div style="margin-bottom: 10px;">
+                        <img src="<?php echo htmlspecialchars($currentTestimony['picture']); ?>" alt="Current picture" style="max-width: 100px; height: auto; border-radius: 5px;">
+                        <p style="font-size: 12px; color: #666;">Current picture</p>
+                    </div>
+                <?php endif; ?>
+                <input type="file" id="picture" name="picture" accept="image/*">
+                <p style="font-size: 12px; color: #666;">Leave empty to keep current picture</p>
             </div>
             <div class="form-group">
                 <label for="message">Message <span style="color:var(--color-rose);">*</span></label>
@@ -179,8 +245,15 @@ adminHeader('Testimonies', 'testimonies');
                 <input type="text" id="position" name="position" value="<?php echo htmlspecialchars($currentTestimony['position']); ?>">
             </div>
             <div class="form-group">
-                <label for="avatar">Avatar URL</label>
-                <input type="text" id="avatar" name="avatar" value="<?php echo htmlspecialchars($currentTestimony['avatar']); ?>">
+                <label for="avatar">Avatar</label>
+                <?php if (!empty($currentTestimony['avatar'])): ?>
+                    <div style="margin-bottom: 10px;">
+                        <img src="<?php echo htmlspecialchars($currentTestimony['avatar']); ?>" alt="Current avatar" style="max-width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+                        <p style="font-size: 12px; color: #666;">Current avatar</p>
+                    </div>
+                <?php endif; ?>
+                <input type="file" id="avatar" name="avatar" accept="image/*">
+                <p style="font-size: 12px; color: #666;">Leave empty to keep current avatar</p>
             </div>
             <div style="display:flex;gap:10px;">
                 <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Update</button>

@@ -18,19 +18,57 @@ $error = '';
 $action = $_GET['action'] ?? 'list';
 $teamId = $_GET['id'] ?? null;
 
+// Helper function to handle file uploads
+function handleFileUpload($fieldName, $uploadDir = '../uploads/team/') {
+    if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $file = $_FILES[$fieldName];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($ext, $allowed)) {
+        throw new Exception('Invalid file type. Only images allowed.');
+    }
+    
+    if ($file['size'] > 5242880) { // 5MB limit
+        throw new Exception('File size exceeds 5MB limit.');
+    }
+    
+    $filename = uniqid() . '.' . $ext;
+    $filepath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        throw new Exception('Failed to upload file.');
+    }
+    
+    return $filepath;
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create') {
             $name = $_POST['name'] ?? '';
             $position = $_POST['position'] ?? '';
-            $photo = $_POST['photo'] ?? null;
             $facebook = $_POST['facebook'] ?? null;
             $instagram = $_POST['instagram'] ?? null;
             $twitter = $_POST['twitter'] ?? null;
             $linkedin = $_POST['linkedin'] ?? null;
+            
+            try {
+                $photo = handleFileUpload('photo');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $photo = null;
+            }
 
-            if (!empty($name) && !empty($position)) {
+            if (!empty($name) && !empty($position) && empty($error)) {
                 $result = $team->create($name, $position, $photo, $facebook, $instagram, $twitter, $linkedin);
                 if ($result) {
                     $message = 'Team member created successfully!';
@@ -45,13 +83,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $memberId = $_POST['id'] ?? null;
             $name = $_POST['name'] ?? '';
             $position = $_POST['position'] ?? '';
-            $photo = $_POST['photo'] ?? null;
             $facebook = $_POST['facebook'] ?? null;
             $instagram = $_POST['instagram'] ?? null;
             $twitter = $_POST['twitter'] ?? null;
             $linkedin = $_POST['linkedin'] ?? null;
+            
+            try {
+                $photo = handleFileUpload('photo');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $photo = null;
+            }
+            
+            // If no new file uploaded, keep the existing photo
+            if ($photo === null && $memberId) {
+                $currentMember = $team->find($memberId);
+                $photo = $currentMember['photo'] ?? null;
+            }
 
-            if ($memberId && !empty($name) && !empty($position)) {
+            if ($memberId && !empty($name) && !empty($position) && empty($error)) {
                 $result = $team->update($memberId, $name, $position, $photo, $facebook, $instagram, $twitter, $linkedin);
                 if ($result) {
                     $message = 'Team member updated successfully!';
@@ -466,7 +516,7 @@ if ($action === 'edit' && $teamId) {
                     <a href="team.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Team</a>
                     <h2><i class="fas fa-user-plus"></i> Add Team Member</h2>
                     
-                    <form method="POST" style="max-width: 500px; margin-top: 20px;">
+                    <form method="POST" enctype="multipart/form-data" style="max-width: 500px; margin-top: 20px;">
                         <input type="hidden" name="action" value="create">
                         
                         <div class="form-group">
@@ -480,8 +530,8 @@ if ($action === 'edit' && $teamId) {
                         </div>
                         
                         <div class="form-group">
-                            <label for="photo">Photo URL</label>
-                            <input type="text" id="photo" name="photo">
+                            <label for="photo">Photo</label>
+                            <input type="file" id="photo" name="photo" accept="image/*">
                         </div>
                         
                         <div class="form-group">
@@ -514,7 +564,7 @@ if ($action === 'edit' && $teamId) {
                     <a href="team.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Team</a>
                     <h2><i class="fas fa-edit"></i> Edit Team Member</h2>
                     
-                    <form method="POST" style="max-width: 600px; margin-top: 20px;">
+                    <form method="POST" enctype="multipart/form-data" style="max-width: 600px; margin-top: 20px;">
                         <input type="hidden" name="action" value="update">
                         <input type="hidden" name="id" value="<?php echo $currentMember['id']; ?>">
                         
@@ -529,8 +579,15 @@ if ($action === 'edit' && $teamId) {
                         </div>
                         
                         <div class="form-group">
-                            <label for="photo">Photo URL</label>
-                            <input type="text" id="photo" name="photo" value="<?php echo htmlspecialchars($currentMember['photo'] ?? ''); ?>">
+                            <label for="photo">Photo</label>
+                            <?php if (!empty($currentMember['photo'])): ?>
+                                <div style="margin-bottom: 10px;">
+                                    <img src="<?php echo htmlspecialchars($currentMember['photo']); ?>" alt="Current photo" style="max-width: 100px; height: auto; border-radius: 5px;">
+                                    <p style="font-size: 12px; color: #666;">Current photo</p>
+                                </div>
+                            <?php endif; ?>
+                            <input type="file" id="photo" name="photo" accept="image/*">
+                            <p style="font-size: 12px; color: #666;">Leave empty to keep current photo</p>
                         </div>
                         
                         <h4>Social Media Links</h4>

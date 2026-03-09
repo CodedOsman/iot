@@ -18,14 +18,52 @@ $error = '';
 $action = $_GET['action'] ?? 'list';
 $partnerId = $_GET['id'] ?? null;
 
+// Helper function to handle file uploads
+function handleFileUpload($fieldName, $uploadDir = '../uploads/partners/') {
+    if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $file = $_FILES[$fieldName];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    
+    if (!in_array($ext, $allowed)) {
+        throw new Exception('Invalid file type. Only images allowed.');
+    }
+    
+    if ($file['size'] > 5242880) { // 5MB limit
+        throw new Exception('File size exceeds 5MB limit.');
+    }
+    
+    $filename = uniqid() . '.' . $ext;
+    $filepath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        throw new Exception('Failed to upload file.');
+    }
+    
+    return $filepath;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'create') {
             $name = $_POST['name'] ?? '';
-            $logo = $_POST['logo'] ?? null;
             $website = $_POST['website'] ?? null;
+            
+            try {
+                $logo = handleFileUpload('logo');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $logo = null;
+            }
 
-            if (!empty($name)) {
+            if (!empty($name) && empty($error)) {
                 if ($partner->create($name, $logo, $website)) {
                     $message = 'Partner created successfully!';
                     $action = 'list';
@@ -38,10 +76,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($_POST['action'] === 'update') {
             $id = $_POST['id'] ?? null;
             $name = $_POST['name'] ?? '';
-            $logo = $_POST['logo'] ?? null;
             $website = $_POST['website'] ?? null;
+            
+            try {
+                $logo = handleFileUpload('logo');
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $logo = null;
+            }
+            
+            // If no new file uploaded, keep the existing logo
+            if ($logo === null && $id) {
+                $currentPartner = $partner->find($id);
+                $logo = $currentPartner['partner_logo'] ?? $currentPartner['logo'] ?? null;
+            }
 
-            if ($id) {
+            if ($id && empty($error)) {
                 if ($partner->update($id, $name, $logo, $website)) {
                     $message = 'Partner updated successfully!';
                 } else {
@@ -342,7 +392,7 @@ if ($action === 'edit' && $partnerId) {
                     <div class="page-header">
                         <h2><i class="fas fa-handshake"></i> <?php echo $action === 'create' ? 'Add Partner' : 'Edit Partner'; ?></h2>
                     </div>
-                    <form method="POST" class="mb-4">
+                    <form method="POST" enctype="multipart/form-data" class="mb-4">
                         <?php if ($action === 'edit'): ?>
                             <input type="hidden" name="action" value="update">
                             <input type="hidden" name="id" value="<?php echo htmlspecialchars($currentPartner['id'] ?? $currentPartner['partner_id'] ?? ''); ?>">
@@ -355,8 +405,17 @@ if ($action === 'edit' && $partnerId) {
                             <input type="text" id="name" name="name" class="form-control" value="<?php echo htmlspecialchars($currentPartner['partner_name'] ?? ''); ?>" required>
                         </div>
                         <div class="form-group">
-                            <label for="logo">Logo URL</label>
-                            <input type="text" id="logo" name="logo" class="form-control" value="<?php echo htmlspecialchars($currentPartner['partner_logo'] ?? ''); ?>">
+                            <label for="logo">Logo</label>
+                            <?php if (!empty($currentPartner['partner_logo'] ?? '')): ?>
+                                <div style="margin-bottom: 10px;">
+                                    <img src="<?php echo htmlspecialchars($currentPartner['partner_logo']); ?>" alt="Current logo" style="max-width: 100px; height: auto; border-radius: 5px;">
+                                    <p style="font-size: 12px; color: #666;">Current logo</p>
+                                </div>
+                            <?php endif; ?>
+                            <input type="file" id="logo" name="logo" class="form-control" accept="image/*">
+                            <?php if ($action === 'edit'): ?>
+                                <p style="font-size: 12px; color: #666;">Leave empty to keep current logo</p>
+                            <?php endif; ?>
                         </div>
                         <div class="form-group">
                             <label for="website">Website</label>
