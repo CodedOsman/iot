@@ -14,6 +14,7 @@ class TestimoniesController {
         return $this->testimony->find($id);
     }
     public function store($data) {
+        // if file paths are passed they should already be relative to uploads/
         return $this->testimony->create(
             $data['picture'] ?? '',
             $data['message'] ?? '',
@@ -23,6 +24,7 @@ class TestimoniesController {
         );
     }
     public function update($id, $data) {
+        // existing picture/avatar should be passed in data array if not replaced
         return $this->testimony->update(
             $id,
             $data['picture'] ?? '',

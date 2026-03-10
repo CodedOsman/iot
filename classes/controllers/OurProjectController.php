@@ -26,7 +26,11 @@ class OurProjectController
             $description = $_POST['description'] ?? null;
             $photo = null;
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $photo = 'uploads/' . basename($_FILES['photo']['name']);
+                $uploadDir = 'uploads/projects/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $photo = $uploadDir . basename($_FILES['photo']['name']);
                 move_uploaded_file($_FILES['photo']['tmp_name'], $photo);
             }
             if ($this->model->create($name, $description, $photo)) {
@@ -56,7 +60,11 @@ class OurProjectController
             $description = $_POST['description'] ?? null;
             $photo = $_POST['existing_photo'] ?? null;
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $photo = 'uploads/' . basename($_FILES['photo']['name']);
+                $uploadDir = 'uploads/projects/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $photo = $uploadDir . basename($_FILES['photo']['name']);
                 move_uploaded_file($_FILES['photo']['tmp_name'], $photo);
             }
             if ($this->model->update($id, $name, $description, $photo)) {

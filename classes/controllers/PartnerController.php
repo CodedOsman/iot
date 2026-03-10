@@ -23,8 +23,16 @@ class PartnerController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_POST['name'];
-            $logo = $_POST['logo'] ?? null;
             $website = $_POST['website'] ?? null;
+            $logo = null;
+            if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = 'uploads/partners/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $logo = $uploadDir . basename($_FILES['logo']['name']);
+                move_uploaded_file($_FILES['logo']['tmp_name'], $logo);
+            }
             if ($this->model->create($name, $logo, $website)) {
                 header('Location: /partner');
             } else {
@@ -49,8 +57,16 @@ class PartnerController
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_POST['name'];
-            $logo = $_POST['logo'] ?? null;
             $website = $_POST['website'] ?? null;
+            $logo = $_POST['existing_logo'] ?? null;
+            if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = 'uploads/partners/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $logo = $uploadDir . basename($_FILES['logo']['name']);
+                move_uploaded_file($_FILES['logo']['tmp_name'], $logo);
+            }
             if ($this->model->update($id, $name, $logo, $website)) {
                 header('Location: /partner');
             } else {
@@ -59,9 +75,10 @@ class PartnerController
         } else {
             $partner = $this->model->find($id);
             if ($partner) {
-                echo '<form method="post" action="">
+                echo '<form method="post" action="" enctype="multipart/form-data">
+                    <input type="hidden" name="existing_logo" value="' . ($partner['partner_logo'] ?? '') . '">
                     <label>Name: <input type="text" name="name" value="' . $partner['partner_name'] . '" required></label><br>
-                    <label>Logo URL: <input type="text" name="logo" value="' . ($partner['partner_logo'] ?? '') . '"></label><br>
+                    <label>Logo: <input type="file" name="logo"></label><br>
                     <label>Website: <input type="url" name="website" value="' . ($partner['partner_website'] ?? '') . '"></label><br>
                     <button type="submit">Update Partner</button>
                 </form>';

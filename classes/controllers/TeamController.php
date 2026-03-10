@@ -25,8 +25,13 @@ class TeamController
             $name = $_POST['name'];
             $position = $_POST['position'];
             $photo = null;
+            // handle file upload if provided
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $photo = 'uploads/' . basename($_FILES['photo']['name']);
+                $uploadDir = 'uploads/team/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $photo = $uploadDir . basename($_FILES['photo']['name']);
                 move_uploaded_file($_FILES['photo']['tmp_name'], $photo);
             }
             $facebook = $_POST['facebook'] ?? null;
@@ -60,7 +65,11 @@ class TeamController
             $position = $_POST['position'];
             $photo = $_POST['existing_photo'] ?? null;
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $photo = 'uploads/' . basename($_FILES['photo']['name']);
+                $uploadDir = 'uploads/team/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $photo = $uploadDir . basename($_FILES['photo']['name']);
                 move_uploaded_file($_FILES['photo']['tmp_name'], $photo);
             }
             $facebook = $_POST['facebook'] ?? null;
